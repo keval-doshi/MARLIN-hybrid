@@ -76,7 +76,7 @@ POLICIES = [
 ]
 
 def _seg_cross(p0, p1, a, b):
-    """Vectorised: does segment p0->p1 cross segment a->b? p0,p1: (n,2). Returns bool mask and t along ab."""
+    """Vectorised: does segment p0->p1 cross segment a->b? p0,p1: (n,2). Returns bool mask and u, the fraction along a->b."""
     r = p1 - p0
     s = b - a
     den = r[:, 0] * s[1] - r[:, 1] * s[0]
@@ -84,7 +84,7 @@ def _seg_cross(p0, p1, a, b):
     qp = a - p0
     t = np.where(ok, (qp[:, 0] * s[1] - qp[:, 1] * s[0]) / np.where(ok, den, 1), -1)
     u = np.where(ok, (qp[:, 0] * r[:, 1] - qp[:, 1] * r[:, 0]) / np.where(ok, den, 1), -1)
-    return ok & (t >= 0) & (t < 1) & (u >= 0) & (u <= 1), t
+    return ok & (t >= 0) & (t < 1) & (u >= 0) & (u <= 1), u    # u = position along the second segment a->b (0 at a)
 
 def run(scn: Scenario, pol: Policy, par: Params = None, seed: int = 1) -> dict:
     par = par or Params()
@@ -203,7 +203,7 @@ def run(scn: Scenario, pol: Policy, par: Params = None, seed: int = 1) -> dict:
                 cr &= ~crossed_b[idx]
                 jj = idx[cr]
                 if len(jj):
-                    s_hit = tt[cr]                                    # fraction along boom from A
+                    s_hit = tt[cr]                                    # fraction along the boom from A (pivot)
                     dist = (1 - s_hit) * BOOM_L
                     bvec = (B - BOOM_A) / BOOM_L
                     speed = max(0.02, ux * bvec[0] + uy * bvec[1])

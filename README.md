@@ -19,25 +19,29 @@ ENEC already detects blooms offshore. MARLIN starts after that alert and reduces
 | Path | What |
 |---|---|
 | `deck/` | 10-slide proposal deck (PPTX and PDF) |
+| `simulator/index.html` | Interactive browser simulator |
 | `simulation/v5/` | Self-contained hybrid screening simulation (Python + numpy) and 15 tests |
 | `outputs/v5/` | Report, CSV, JSON and chart from the final run |
 | `docs/STRATEGY_V5.md` | Strategy, ENEC criteria mapping, findings, limits, next steps |
 | `UPDATE_NOTES.md` | Notes on the update and how it relates to the earlier prototype |
 
+## Interactive simulator
+Open `simulator/index.html` in a browser (double-click it, no install). Choose a sea state and a strategy, watch the run, and use *Compare strategies* for a side-by-side table. It is a browser port of the Python engine.
+
 ## Run the simulation
 ```
 cd simulation/v5
-python test_hybrid.py      # 15 checks, about 10 s
+python test_hybrid.py      # 16 checks, about 10 s
 python run_scenarios.py    # full Monte Carlo run, about 6 min
 ```
 
 ## Key results (illustrative, uncalibrated)
 Share of jellyfish mass kept from reaching the intake, compared with doing nothing (median over 40 draws):
 
-- Bubbles plus boom beat the boom alone in calm seas: **52% vs 36%**, and they add nothing if bubbles do not lift animals.
-- The manual-catch Layer 3 adds roughly **11-19 points** in calm and moderate seas.
+- Bubbles plus boom beat the boom alone in calm seas: **46% vs 32%**, and they add nothing if bubbles do not lift animals.
+- The manual-catch Layer 3 adds roughly **16-22 points** in calm and moderate seas.
 - Adaptive control cuts air energy by about **38%** (and to zero with no bloom), but did **not** improve catch over fixed settings. Better catch from adaptive control is a hypothesis for flume testing.
-- In a 2 m storm every strategy drops to about **12%**.
+- In a 2 m storm every strategy drops to about **11%**.
 
 ![Results](outputs/v5/results_chart.png)
 

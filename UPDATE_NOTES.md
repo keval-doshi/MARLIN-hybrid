@@ -26,3 +26,7 @@ git commit -m "Add v5 hybrid simulation, strategy doc and updated deck"
 git push -u origin hybrid-v5      # then open a pull request, or merge to main
 ```
 If you unzip into a folder that already has `simulation/` or `outputs/`, the new `v5` subfolders are added beside the existing `v4` ones.
+
+## Changelog
+- **Fix (13 Oct):** the distance a guided cohort travels along the boom was computed from the fraction along the jellyfish's path instead of along the boom, which made escape and collector delay effectively random. Fixed, a test added (`test_guided_distance_follows_boom_geometry`), all results regenerated. Conclusions are unchanged in direction; figures moved by a few points.
+- Added `simulator/index.html`, an interactive browser version of the engine.

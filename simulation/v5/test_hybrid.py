@@ -78,11 +78,20 @@ class HybridTests(unittest.TestCase):
         self.assertLess(abs(r["ledger_err_kg"]), 1e-6)
 
     def test_segment_crossing_helper(self):
-        m, t = vst = (None, None)
-        cr, t = __import__("engine")._seg_cross(np.array([[0., 0.]]), np.array([[2., 0.]]), np.array([1., -1.]), np.array([1., 1.]))
-        self.assertTrue(cr[0]); self.assertAlmostEqual(float(t[0]), 0.5)
-        cr, _ = __import__("engine")._seg_cross(np.array([[0., 0.]]), np.array([[0.5, 0.]]), np.array([1., -1.]), np.array([1., 1.]))
+        import engine
+        # path (0,0)->(2,0) crosses boom (1,-1)->(1,3) at (1,0): halfway along the path but 1/4 along the boom
+        cr, u = engine._seg_cross(np.array([[0., 0.]]), np.array([[2., 0.]]), np.array([1., -1.]), np.array([1., 3.]))
+        self.assertTrue(cr[0]); self.assertAlmostEqual(float(u[0]), 0.25)
+        cr, _ = engine._seg_cross(np.array([[0., 0.]]), np.array([[0.5, 0.]]), np.array([1., -1.]), np.array([1., 3.]))
         self.assertFalse(cr[0])
+
+    def test_guided_distance_follows_boom_geometry(self):
+        # a cohort crossing near the pivot has farther to travel than one crossing near the boom end,
+        # so retention must be lower near the pivot (esc_per_m large, no time term)
+        par = Params(surface_frac0=1.0, esc_per_m=0.01, esc_per_h=0.0)
+        r_pivot = run(Scenario("p", "p", y_range=(-38.0, -30.0)), pol("boom_only"), par, seed=1)
+        r_end = run(Scenario("e", "e", y_range=(100.0, 110.0)), pol("boom_only"), par, seed=1)
+        self.assertLess(r_pivot["collected"] / r_pivot["arrived"], r_end["collected"] / r_end["arrived"])
 
 if __name__ == "__main__":
     unittest.main(verbosity=1)

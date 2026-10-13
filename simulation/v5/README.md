@@ -10,7 +10,7 @@ Self-contained: no external data files are needed (v4 needs an ERA5/SMOC `data/p
 
 ```
 cd simulation/v5
-python test_hybrid.py        # 15 checks, ~10 s
+python test_hybrid.py        # 16 checks, ~10 s
 python run_scenarios.py      # 10 scenarios x 2 bubble assumptions x 7 policies x 40 draws, ~6 min on 2 cores
 ```
 

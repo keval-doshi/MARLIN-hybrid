@@ -1,0 +1,251 @@
+<title>MARLIN Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+<style>
+/* Layout: a plan-view chart room. Instrument column on the right, chart on the left, comparison table below.
+   Color: harbour navy and chart-paper greys with teal for the system, amber for surface water, coral for danger. */
+:root{
+  --bg:#f3f6f7; --panel:#ffffff; --ink:#0c2233; --muted:#5a6b78; --line:#d5dee3;
+  --sea:#e4f1f3; --sea2:#cfe6ea; --teal:#13867a; --amber:#c98a0b; --coral:#d9573f; --navy:#0c2233; --wall:#7b8791;
+  --jelly:#d9573f; --jelly-top:#c98a0b; --ok:#13867a;
+  --serif:'Source Serif 4',Georgia,serif; --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#09151f; --panel:#10212e; --ink:#e6eef2; --muted:#93a6b3; --line:#223646; --sea:#0f2a38; --sea2:#14394a;
+  --teal:#3cc4b3; --amber:#f2b134; --coral:#ff7d63; --navy:#e6eef2; --wall:#8fa0ac; --jelly:#ff7d63; --jelly-top:#f2b134; --ok:#3cc4b3; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#09151f; --panel:#10212e; --ink:#e6eef2; --muted:#93a6b3; --line:#223646; --sea:#0f2a38; --sea2:#14394a;
+  --teal:#3cc4b3; --amber:#f2b134; --coral:#ff7d63; --navy:#e6eef2; --wall:#8fa0ac; --jelly:#ff7d63; --jelly-top:#f2b134; --ok:#3cc4b3; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;padding-inline:16px;padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font-family:var(--serif);font-size:clamp(26px,4vw,38px);line-height:1.1;margin:0 0 6px;text-wrap:balance}
+.sub{color:var(--muted);max-width:68ch;margin:0 0 18px}
+.tag{display:inline-block;font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--coral);border:1px solid var(--coral);padding:2px 8px;border-radius:3px;margin-bottom:10px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+@media(max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px}
+canvas{display:block;width:100%;height:auto;border-radius:3px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted);padding:8px 4px 2px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.legend b{display:inline-block;width:16px;height:3px;margin-right:6px;vertical-align:3px}
+.ctl{display:flex;flex-direction:column;gap:12px}
+label{font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+select,input[type=range]{width:100%}
+select{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:8px;font:inherit}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+button{font:500 14px var(--sans);border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:4px;cursor:pointer;min-height:38px}
+button.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+button[aria-pressed=true]{outline:2px solid var(--teal);outline-offset:-2px}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.read{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;border-top:1px solid var(--line);padding-top:12px}
+.read div{min-width:0}
+.read .k{font:500 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.read .v{font:500 24px var(--mono);font-variant-numeric:tabular-nums}
+.read .v small{font-size:13px;color:var(--muted)}
+.big .v{color:var(--coral)} .good .v{color:var(--ok)}
+.state{font:12.5px var(--mono);color:var(--muted);border-top:1px solid var(--line);padding-top:10px;line-height:1.7}
+h2{font-family:var(--serif);font-size:22px;margin:30px 0 4px}
+.note{color:var(--muted);font-size:13.5px;max-width:75ch;margin:0 0 12px}
+.cmp{width:100%;border-collapse:collapse;font-size:14px}
+.cmp th{font:500 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+.cmp td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.cmp td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{height:10px;background:var(--sea2);border-radius:2px;min-width:90px;position:relative}
+.bar span{position:absolute;inset:0 auto 0 0;background:var(--teal);border-radius:2px}
+.tw{overflow-x:auto}
+.limits{font-size:13px;color:var(--muted);max-width:80ch;margin-top:26px;border-top:1px solid var(--line);padding-top:14px}
+.limits li{margin-bottom:3px}
+</style>
+<div class="wrap">
+  <span class="tag">Illustrative · uncalibrated</span>
+  <h1>MARLIN simulator</h1>
+  <p class="sub">Plan view of a bloom drifting toward the plant intake. A bubble curtain lifts jellyfish, an angled boom guides them to a collector, a crew sweeps stragglers, and adaptive control sets air and boom angle. Pick a sea state and a strategy, then watch where the mass goes.</p>
+  <div class="main">
+    <div class="stage">
+      <canvas id="cv" width="960" height="560" aria-label="Plan view of the bloom, curtain, boom, collector and intake"></canvas>
+      <div class="legend">
+        <span><i style="background:var(--jelly)"></i>deep jellyfish</span>
+        <span><i style="background:var(--jelly-top)"></i>surface jellyfish</span>
+        <span><b style="background:var(--teal)"></b>bubble curtain (3 zones)</span>
+        <span><b style="background:var(--amber)"></b>angled boom</span>
+        <span><b style="background:var(--wall)"></b>breakwater, intake gap</span>
+      </div>
+    </div>
+    <div class="ctl">
+      <div><label for="scn">Scenario</label><select id="scn"></select></div>
+      <div><label for="pol">Strategy</label><select id="pol"></select></div>
+      <div><label for="lift">Bubble lift at full air: <span id="liftv"></span></label><input id="lift" type="range" min="0" max="0.8" step="0.05" value="0.55"></div>
+      <div class="row">
+        <button id="play" class="primary">Pause</button><button id="reset">Restart</button>
+        <button data-sp="1" aria-pressed="false">1×</button><button data-sp="4" aria-pressed="true">4×</button><button data-sp="16" aria-pressed="false">16×</button>
+      </div>
+      <div class="read" aria-live="off">
+        <div><div class="k">Sim time</div><div class="v" id="t">0.0<small> h</small></div></div>
+        <div class="big"><div class="k">Reached intake</div><div class="v" id="r1">0<small> %</small></div></div>
+        <div class="good"><div class="k">Collected</div><div class="v" id="r2">0<small> %</small></div></div>
+        <div class="good"><div class="k">Crew-caught</div><div class="v" id="r3">0<small> %</small></div></div>
+        <div><div class="k">Air energy</div><div class="v" id="r4">0<small> kWh</small></div></div>
+        <div><div class="k">Boom angle</div><div class="v" id="r5">0<small> °</small></div></div>
+      </div>
+      <div class="state" id="state"></div>
+    </div>
+  </div>
+
+  <h2>Compare every strategy on this scenario</h2>
+  <p class="note">Runs all seven strategies on the selected scenario with 16 random seeds each and the same bubble-lift setting. Reduction is measured against doing nothing. Seeds make the numbers move a little between runs of the page.</p>
+  <div class="row" style="margin-bottom:12px"><button id="cmpbtn" class="primary">Compare strategies</button><span id="cmpmsg" class="note" style="margin:0;align-self:center"></span></div>
+  <div class="tw"><table class="cmp"><thead><tr><th>Strategy</th><th>Less mass at intake</th><th></th><th>Air kWh</th><th>Crew h</th></tr></thead><tbody id="cmpbody"><tr><td colspan="5" class="note">Press Compare strategies.</td></tr></tbody></table></div>
+
+  <ul class="limits">
+    <li>Same model as the Python engine in the repo (simulation/v5), ported to the browser. Random draws differ, so single runs differ from the report's Monte Carlo medians.</li>
+    <li>Parameters are placeholders. This ranks strategies under stated assumptions; it does not predict field catch.</li>
+    <li>A bubble line alone gives no exclusion: lift only helps because the boom can then guide the lifted animals. Set the lift to zero to see it.</li>
+    <li>No CFD, intake hydraulics, bycatch or injury, and no trained ML or computer vision. The controller is a readable rule set.</li>
+  </ul>
+</div>
+<script>
+(()=>{
+const DT=30,HOURS=10,WALL_X=300,ENTR=[-30,30],CUR_X=120,CUR_Y=[-135,135],ZONES=3,A=[150,-40],BL=194,DES=55.5*Math.PI/180,SENS_X=60,FULL_KW=4.8;
+const SCN=[
+ {id:'calm',label:'Calm reference (1200 kg/h, 4 h)',rate:1200,arr:4,y:[-150,150],hs:.4,u:.12,shift:0},
+ {id:'mod',label:'Moderate sea, Hs 1.2 m',rate:1200,arr:4,y:[-150,150],hs:1.2,u:.12,shift:0},
+ {id:'storm',label:'Storm, Hs 2 m',rate:1200,arr:4,y:[-150,150],hs:2,u:.12,shift:0},
+ {id:'triple',label:'Triple bloom load (3600 kg/h)',rate:3600,arr:4,y:[-150,150],hs:.4,u:.12,shift:0},
+ {id:'shift',label:'Current rotates +30° after hour 2',rate:1200,arr:4,y:[-150,150],hs:.4,u:.12,shift:30},
+ {id:'shiftn',label:'Current rotates −30° after hour 2',rate:1200,arr:4,y:[-150,150],hs:.4,u:.12,shift:-30},
+ {id:'one',label:'Bloom on one side only',rate:1200,arr:4,y:[-150,-20],hs:.4,u:.12,shift:0},
+ {id:'out',label:'Collector down for 2 h (hours 1–3)',rate:1200,arr:4,y:[-150,150],hs:.4,u:.12,shift:0,out:[1,3]},
+ {id:'blind',label:'Sensors blind (fail-safe)',rate:1200,arr:4,y:[-150,150],hs:.4,u:.12,shift:0,blind:true},
+ {id:'weak',label:'Weak current 0.05 m/s',rate:1200,arr:4,y:[-150,150],hs:.4,u:.05,shift:0},
+];
+const POL=[
+ {id:'none',label:'Do nothing (intake screens only)',bubble:'off',boom:'none',crew:false},
+ {id:'bubble',label:'Bubble curtain only, fixed air',bubble:'fixed',boom:'none',crew:false},
+ {id:'boom',label:'Angled boom only, fixed angle',bubble:'off',boom:'fixed',crew:false},
+ {id:'hf',label:'Bubble + boom, fixed settings',bubble:'fixed',boom:'fixed',crew:false},
+ {id:'ha',label:'Bubble + boom, adaptive control',bubble:'adaptive',boom:'adaptive',crew:false},
+ {id:'hac',label:'Adaptive + Layer 3 manual catch',bubble:'adaptive',boom:'adaptive',crew:true},
+ {id:'hfc',label:'Fixed + Layer 3 manual catch',bubble:'fixed',boom:'fixed',crew:true},
+];
+function rng(seed){let a=seed>>>0;const u=()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+  const n=()=>{let x=0,y=0;while(x<1e-12)x=u();y=u();return Math.sqrt(-2*Math.log(x))*Math.cos(2*Math.PI*y)};return{u,n}}
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+function segU(p0,p1,a,b){const rx=p1[0]-p0[0],ry=p1[1]-p0[1],sx=b[0]-a[0],sy=b[1]-a[1],den=rx*sy-ry*sx;if(Math.abs(den)<1e-9)return -1;
+  const qx=a[0]-p0[0],qy=a[1]-p0[1],t=(qx*sy-qy*sx)/den,u=(qx*ry-qy*rx)/den;return(t>=0&&t<1&&u>=0&&u<=1)?u:-1}
+class Sim{
+  constructor(scn,pol,par,seed){this.scn=scn;this.pol=pol;this.par=par;this.R=rng(seed);this.k=0;this.N=Math.floor(HOURS*3600/DT);
+    this.c=[];this.guided=[];this.q=0;this.air=[0,0,0];this.est=[0,0,0];this.off=[0,0,0];this.kwh=0;this.crewH=0;this.alpha=DES;this.moved=0;
+    this.L={arrived:0,screens:0,collected:0,crew:0,wall:0};this.edges=[0,1,2,3].map(i=>CUR_Y[0]+i*(CUR_Y[1]-CUR_Y[0])/3);this.crewOn=false;this.B=[0,0];this.done=false}
+  wave(){return Math.max(0,1-this.scn.hs/this.par.waveLoss)}
+  step(){
+    const {scn,pol,par,R}=this,k=this.k,th=k*DT/3600;
+    const shift=scn.shift*Math.PI/180*clamp(th-2,0,1),ux=scn.u*Math.cos(shift),uy=scn.u*Math.sin(shift),cur=shift;
+    const over=Math.min(.6,Math.max(0,(scn.hs-.8)/1.5)),crewOk=scn.hs<1.5;
+    if(th<scn.arr){const m=scn.rate*DT/3600/4;for(let i=0;i<4;i++)this.c.push({x:0,y:scn.y[0]+R.u()*(scn.y[1]-scn.y[0]),m,sf:par.surf,cc:false,cb:false});this.L.arrived+=m*4}
+    const adaptive=pol.bubble==='adaptive'||pol.boom==='adaptive'||pol.crew;
+    if(adaptive&&k%10===0){for(let z=0;z<ZONES;z++){let sm=0;for(const p of this.c)if(p.x>=SENS_X-12&&p.x<SENS_X+12&&p.y>=this.edges[z]&&p.y<this.edges[z+1])sm+=p.m;
+      const flux=sm*3600/(24/Math.max(ux,1e-3));const meas=scn.blind?0:flux*Math.exp(R.n()*par.sigma);this.est[z]=.6*this.est[z]+.4*meas}}
+    if(pol.bubble==='fixed'){const on=th<scn.arr+1;this.air=[on?1:0,on?1:0,on?1:0]}
+    else if(pol.bubble==='adaptive'){
+      if(scn.blind){const on=th<scn.arr+.5?1:0;this.air=[on,on,on]}
+      else for(let z=0;z<ZONES;z++){const e=this.est[z],tg=e<120?0:(e<350?.4:1);if(tg>0){this.off[z]=0;this.air[z]=tg}else{this.off[z]+=DT/60;if(this.off[z]>15)this.air[z]=0}}
+    }else this.air=[0,0,0];
+    if(this.wave()<=0&&pol.bubble==='adaptive')this.air=[0,0,0];
+    this.kwh+=(this.air[0]+this.air[1]+this.air[2])/ZONES*FULL_KW*DT/3600;
+    if(pol.boom==='adaptive'){const want=cur+DES,st=Math.PI/180*DT/60,d=clamp(want-this.alpha,-st,st);this.alpha+=d;this.moved+=Math.abs(d*180/Math.PI)}else this.alpha=DES;
+    const boomOn=pol.boom!=='none',B=[A[0]+BL*Math.cos(this.alpha),A[1]+BL*Math.sin(this.alpha)];this.B=B;
+    if(pol.crew){this.crewOn=crewOk&&th<scn.arr+1.5;if(this.crewOn)this.crewH+=DT/3600}
+    const sd=Math.sqrt(2*.05*DT),spill=[];
+    for(const p of this.c){
+      const p0=[p.x,p.y],p1=[p.x+ux*DT+R.n()*sd,p.y+uy*DT+R.n()*sd];
+      if(pol.bubble!=='off'){
+        if(!p.cc&&p0[0]<CUR_X&&p1[0]>=CUR_X){const yc=p0[1]+(p1[1]-p0[1])*(CUR_X-p0[0])/(p1[0]===p0[0]?1:p1[0]-p0[0]);
+          if(yc>=CUR_Y[0]&&yc<CUR_Y[1]){const z=clamp(Math.floor((yc-CUR_Y[0])/((CUR_Y[1]-CUR_Y[0])/3)),0,2);p.sf+=(1-p.sf)*this.air[z]*this.wave()*par.lift}
+          p.cc=true}
+      }else p.cc=true;
+      if(boomOn&&!p.cb){const u=segU(p0,p1,A,B);if(u>=0){
+        const dist=(1-u)*BL,bx=(B[0]-A[0])/BL,by=(B[1]-A[1])/BL,speed=Math.max(.02,ux*bx+uy*by),dwell=dist/speed/3600;
+        const retain=Math.exp(-par.escM*dist-par.escH*dwell),gf=p.sf*(1-over)*retain,gk=p.m*gf;
+        this.guided.push({s:k+Math.floor(dwell*3600/DT)+1,kg:gk});p.m-=gk;
+        p.sf=p.m>1e-12?clamp(p.sf*(1-(1-over)*retain)/Math.max(1-gf,1e-9),0,1):0;p.cb=true}}
+      p.x=p1[0];p.y=p1[1];
+      if(p.x>=WALL_X){if(p.y>=ENTR[0]&&p.y<=ENTR[1])this.L.screens+=p.m;else this.L.wall+=p.m;p.dead=true}
+    }
+    if(pol.crew&&this.crewOn){const cap=par.crew*DT/3600;let av=0;const zn=[];for(const p of this.c)if(!p.dead&&p.x>250&&p.x<WALL_X&&p.y>ENTR[0]-20&&p.y<ENTR[1]+20){zn.push(p);av+=p.m*p.sf}
+      if(av>0){const take=Math.min(cap,av),fr=take/av;for(const p of zn){const rm=p.m*p.sf*fr;p.m-=rm;this.L.crew+=rm;p.sf=p.m>1e-12?clamp(p.sf*(1-fr)/Math.max(1-p.sf*fr,1e-9),0,1):0}}}
+    this.c=this.c.filter(p=>!p.dead&&p.m>1e-12);
+    let arr=0;this.guided=this.guided.filter(g=>{if(g.s<=k){arr+=g.kg;return false}return true});this.q+=arr;
+    const out=scn.out&&scn.out[0]<=th&&th<scn.out[1],rate=out?0:par.coll*DT/3600,done=Math.min(this.q,rate);this.L.collected+=done;this.q-=done;
+    if(this.q>3000){const sp=this.q-3000;this.q=3000;this.c.push({x:B[0]+3,y:B[1]+3,m:sp,sf:0,cc:true,cb:true})}
+    this.k++;if(this.k>=this.N)this.done=true;
+  }
+  held(){return this.q+this.guided.reduce((s,g)=>s+g.kg,0)+this.c.reduce((s,p)=>s+p.m,0)}
+  ledger(){return this.L.screens+this.L.collected+this.L.crew+this.L.wall+this.held()-this.L.arrived}
+}
+const par0=()=>({surf:.35,lift:+document.getElementById('lift').value,escM:.0008,escH:.25,sigma:.35,crew:250,coll:2000,waveLoss:2});
+const $=id=>document.getElementById(id);
+for(const s of SCN)$('scn').add(new Option(s.label,s.id));
+for(const p of POL)$('pol').add(new Option(p.label,p.id));
+$('pol').value='hac';
+let sim,speed=4,playing=true,seed=7;
+function build(){sim=new Sim(SCN.find(s=>s.id===$('scn').value),POL.find(p=>p.id===$('pol').value),par0(),seed);$('liftv').textContent=(+$('lift').value).toFixed(2);playing=true;$('play').textContent='Pause';draw()}
+const cv=$('cv'),g=cv.getContext('2d'),W=cv.width,H=cv.height,PX=x=>x/320*W,PY=y=>(y+165)/330*H;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function draw(){
+  const sea=css('--sea'),sea2=css('--sea2'),teal=css('--teal'),amber=css('--amber'),wall=css('--wall'),jelly=css('--jelly'),top=css('--jelly-top'),ink=css('--ink'),muted=css('--muted');
+  g.clearRect(0,0,W,H);g.fillStyle=sea;g.fillRect(0,0,W,H);
+  // current arrows
+  g.strokeStyle=sea2;g.lineWidth=2;const sh=sim.scn.shift*Math.PI/180*clamp((sim.k*DT/3600)-2,0,1);
+  for(let y=-140;y<=140;y+=40){for(let x=20;x<300;x+=70){const x0=PX(x),y0=PY(y),dx=Math.cos(sh)*26,dy=Math.sin(sh)*26;g.beginPath();g.moveTo(x0,y0);g.lineTo(x0+dx,y0+dy);g.lineTo(x0+dx-6*Math.cos(sh-.5),y0+dy-6*Math.sin(sh-.5));g.moveTo(x0+dx,y0+dy);g.lineTo(x0+dx-6*Math.cos(sh+.5),y0+dy-6*Math.sin(sh+.5));g.stroke()}}
+  // sensor gate
+  g.setLineDash([5,5]);g.strokeStyle=muted;g.lineWidth=1;g.beginPath();g.moveTo(PX(SENS_X),0);g.lineTo(PX(SENS_X),H);g.stroke();g.setLineDash([]);
+  g.fillStyle=muted;g.font='500 12px IBM Plex Mono, monospace';g.fillText('sensor gate',PX(SENS_X)+6,16);
+  // crew zone
+  if(sim.pol.crew){g.strokeStyle=sim.crewOn?amber:muted;g.setLineDash([4,4]);g.strokeRect(PX(250),PY(ENTR[0]-20),PX(WALL_X)-PX(250),PY(ENTR[1]+20)-PY(ENTR[0]-20));g.setLineDash([]);g.fillStyle=sim.crewOn?amber:muted;g.fillText(sim.crewOn?'crew sweeping':'crew standby',PX(250)-2,PY(ENTR[0]-20)-6)}
+  // wall
+  g.fillStyle=wall;g.fillRect(PX(WALL_X),0,W-PX(WALL_X),PY(ENTR[0]));g.fillRect(PX(WALL_X),PY(ENTR[1]),W-PX(WALL_X),H-PY(ENTR[1]));
+  g.fillStyle=ink;g.fillText('intake',PX(WALL_X)+8,PY(0)+4);
+  // curtain zones
+  const zh=(CUR_Y[1]-CUR_Y[0])/3;
+  for(let z=0;z<3;z++){const a=sim.air[z],y0=PY(CUR_Y[0]+z*zh),y1=PY(CUR_Y[0]+(z+1)*zh);
+    g.strokeStyle=teal;g.globalAlpha=a>0?.35+.65*a:.25;g.lineWidth=a>0?5:2;g.setLineDash(a>0?[2,7]:[2,10]);g.lineCap='round';
+    g.beginPath();g.moveTo(PX(CUR_X),y0+2);g.lineTo(PX(CUR_X),y1-2);g.stroke();g.setLineDash([]);g.globalAlpha=1;
+    g.fillStyle=a>0?teal:muted;g.fillText(a>0?'air '+Math.round(a*100)+'%':'air off',PX(CUR_X)+9,(y0+y1)/2+4)}
+  g.lineCap='butt';
+  // boom + collector
+  if(sim.pol.boom!=='none'){const B=sim.B[0]?sim.B:[A[0]+BL*Math.cos(DES),A[1]+BL*Math.sin(DES)];
+    g.strokeStyle=amber;g.lineWidth=6;g.lineCap='round';g.beginPath();g.moveTo(PX(A[0]),PY(A[1]));g.lineTo(PX(B[0]),PY(B[1]));g.stroke();g.lineCap='butt';
+    g.fillStyle=teal;g.fillRect(PX(B[0])-9,PY(B[1])-9,18,18);g.fillStyle=ink;g.fillText('collector',PX(B[0])+14,PY(B[1])+4)}
+  // cohorts
+  for(const p of sim.c){const r=3+Math.sqrt(p.m)*1.1;g.fillStyle=p.sf>.5?top:jelly;g.globalAlpha=.55+.4*p.sf;g.beginPath();g.arc(PX(p.x),PY(p.y),r,0,6.283);g.fill()}
+  g.globalAlpha=1;
+  // readouts
+  const L=sim.L,ar=Math.max(L.arrived,1e-9);
+  $('t').innerHTML=(sim.k*DT/3600).toFixed(1)+'<small> h</small>';
+  $('r1').innerHTML=(100*L.screens/ar).toFixed(0)+'<small> %</small>';
+  $('r2').innerHTML=(100*L.collected/ar).toFixed(0)+'<small> %</small>';
+  $('r3').innerHTML=(100*L.crew/ar).toFixed(0)+'<small> %</small>';
+  $('r4').innerHTML=sim.kwh.toFixed(1)+'<small> kWh</small>';
+  $('r5').innerHTML=(sim.alpha*180/Math.PI).toFixed(0)+'<small> °</small>';
+  $('state').innerHTML=(sim.done?'Run finished.':'Running.')+' Arrived '+L.arrived.toFixed(0)+' kg · drifted past the intake gap '+(100*L.wall/ar).toFixed(0)+'% · still afloat or held '+(100*sim.held()/ar).toFixed(0)+'%<br>Mass ledger error: '+Math.abs(sim.ledger()).toExponential(1)+' kg';
+}
+let last=0;
+function loop(ts){if(playing&&!sim.done&&ts-last>33){last=ts;for(let i=0;i<speed;i++)if(!sim.done)sim.step();draw()}requestAnimationFrame(loop)}
+$('play').onclick=()=>{if(sim.done){build();return}playing=!playing;$('play').textContent=playing?'Pause':'Resume'};
+$('reset').onclick=build;
+for(const id of ['scn','pol','lift'])$(id).addEventListener('input',build);
+document.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;document.querySelectorAll('[data-sp]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+$('cmpbtn').onclick=()=>{
+  $('cmpmsg').textContent='Running 112 simulations…';$('cmpbtn').disabled=true;
+  setTimeout(()=>{
+    const scn=SCN.find(s=>s.id===$('scn').value),par=par0(),S=16,res=POL.map(p=>({p,red:0,kwh:0,crew:0}));
+    for(let s=0;s<S;s++){const base=(()=>{const m=new Sim(scn,POL[0],par,100+s);while(!m.done)m.step();return m.L.screens})();
+      res.forEach(r=>{const m=new Sim(scn,r.p,par,100+s);while(!m.done)m.step();r.red+=base>0?100*(1-m.L.screens/base):0;r.kwh+=m.kwh;r.crew+=m.crewH})}
+    $('cmpbody').innerHTML=res.map(r=>{const v=r.red/S;return `<tr><td>${r.p.label}</td><td class="n">${v.toFixed(0)}%</td><td><div class="bar"><span style="width:${clamp(v,0,100)}%"></span></div></td><td class="n">${(r.kwh/S).toFixed(1)}</td><td class="n">${(r.crew/S).toFixed(1)}</td></tr>`}).join('');
+    $('cmpmsg').textContent='Mean of 16 seeds. Scenario: '+scn.label+'.';$('cmpbtn').disabled=false;
+  },30)};
+build();requestAnimationFrame(loop);
+if(window.matchMedia)window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>draw());
+})();
+</script>

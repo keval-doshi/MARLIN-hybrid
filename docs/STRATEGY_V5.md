@@ -18,14 +18,16 @@ The existing intake screens stay untouched as the last line. Nothing in the conc
 | Communication and evidence | 15% | Field and flume literature plus the v5 simulation with stated limits |
 
 ## What the v5 simulation found (read before presenting)
+Results were regenerated after fixing a boom-distance bug found on 13 Oct (see the changelog in UPDATE_NOTES.md).
+
 Source: `outputs/v5/RUN_REPORT.md`. 40 Monte Carlo draws per cell, same draws for every strategy. Metric: % less jellyfish mass reaching the intake entrance than doing nothing.
 
-- **Bubbles + boom beat the boom alone** when bubbles can lift animals: calm 52% vs 36%. If bubbles give zero lift, they add nothing (both 31%). The bubble curtain only helps because it feeds the boom.
-- **Layer 3 (manual catch) adds about 11-19 points** in calm and moderate seas (calm: 49% adaptive -> 60% with crew; Hs 1.2 m: 28% -> 47%).
-- **Adaptive control saves air energy, not catch.** Calm: 14.8 kWh vs 24.0 kWh for a fixed schedule (about 38% less), zero kWh with no bloom, and 0 kWh in a 2 m storm. But adaptive did not beat fixed settings on catch (calm 49% vs 52%), and in the one-sided-bloom case it was worse (39% vs 50%) because the zone thresholds under-react to noisy sensors.
-- **Adaptive boom angle did not help** in the rotating-current case (34% vs 36% fixed). In this geometry a fixed boom still intercepts most of the flow. The claim "changing the boom direction improves catch" is **not supported yet**.
-- **Storms defeat everything**: about 12% in a 2 m sea for every strategy (curtain loses lift, boom overtopped, crew stood down). The operations plan must say so.
-- **Absolute numbers are modest** (roughly 50-65% in calm seas). Do not present them as expected field performance; they are placeholders from stated ranges. The v4 repo headline of 97.5% captured should not appear next to them.
+- **Bubbles + boom beat the boom alone** when bubbles can lift animals: calm 46% vs 32%. If bubbles give zero lift, they add nothing (about 28% vs 32% for the boom alone, within noise). The bubble curtain only helps because it feeds the boom.
+- **Layer 3 (manual catch) adds about 16-22 points** in calm and moderate seas (calm: 44% adaptive -> 60% with crew; Hs 1.2 m: 25% -> 47%).
+- **Adaptive control saves air energy, not catch.** Calm: 14.8 kWh vs 24.0 kWh for a fixed schedule (about 38% less), zero kWh with no bloom, and 0 kWh in a 2 m storm. But adaptive did not beat fixed settings on catch (calm 44% vs 46%), and in the one-sided-bloom case it was worse (33% vs 42%) because the zone thresholds under-react to noisy sensors.
+- **Adaptive boom angle did not help** in the rotating-current case (30% vs 32% fixed). In this geometry a fixed boom still intercepts most of the flow. The claim "changing the boom direction improves catch" is **not supported yet**.
+- **Storms defeat everything**: about 11% in a 2 m sea for every strategy (curtain loses lift, boom overtopped, crew stood down). The operations plan must say so.
+- **Absolute numbers are modest** (roughly 45-65% in calm seas). Do not present them as expected field performance; they are placeholders from stated ranges. The v4 repo headline of 97.5% captured should not appear next to them.
 
 ## How to present it honestly
 - Say the software's proven benefit is **less energy, less disturbance, and a safe fail-state**; present catch improvement as a hypothesis for the flume.
